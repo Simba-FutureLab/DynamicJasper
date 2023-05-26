@@ -31,7 +31,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>ar.com.fdvs</groupId>
     <artifactId>DynamicJasper</artifactId>
-    <version>5.3.8</version>
+    <version>5.3.8+flu1</version>
     <name>DynamicJasper</name>
     <packaging>jar</packaging>
     <description>
@@ -314,6 +314,17 @@
                 </repository>
             </distributionManagement>
         </profile>
+        <profile>
+            <id>dj-futurelab</id>
+            <dependencies>
+                <dependency>
+                    <groupId>jaxen</groupId>
+                    <artifactId>jaxen</artifactId>
+                    <version>1.2.0</version>
+                    <scope>test</scope>
+                </dependency>
+            </dependencies>
+        </profile>
     </profiles>
 
 
@@ -328,7 +339,7 @@
         <dependency>
             <groupId>net.sf.jasperreports</groupId>
             <artifactId>jasperreports</artifactId>
-            <version>[6.11.0, 6.20.0]</version>
+            <version>[6.11.0, 6.20.5]</version>
             <exclusions>
                 <exclusion>
                     <groupId>commons-collections</groupId>
