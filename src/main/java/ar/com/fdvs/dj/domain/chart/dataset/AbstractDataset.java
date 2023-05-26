@@ -38,6 +38,7 @@ import net.sf.jasperreports.engine.design.JRDesignChartDataset;
 import net.sf.jasperreports.engine.design.JRDesignExpression;
 import net.sf.jasperreports.engine.design.JRDesignGroup;
 import net.sf.jasperreports.engine.design.JRDesignVariable;
+import net.sf.jasperreports.engine.type.DatasetResetTypeEnum;
 import net.sf.jasperreports.engine.type.IncrementTypeEnum;
 import net.sf.jasperreports.engine.type.ResetTypeEnum;
 
@@ -64,9 +65,9 @@ public abstract class AbstractDataset extends DJBaseElement {
 		dataset.setIncrementType( IncrementTypeEnum.GROUP );
 		dataset.setIncrementGroup(group);
 		if (dataset.getResetGroup().equals(group))
-			dataset.setResetType( ResetTypeEnum.REPORT );
+			dataset.setResetType( DatasetResetTypeEnum.REPORT );
 		else
-			dataset.setResetType( ResetTypeEnum.GROUP );
+			dataset.setResetType( DatasetResetTypeEnum.GROUP );
 	}
 	
 	public abstract PropertyColumn getColumnsGroup();
