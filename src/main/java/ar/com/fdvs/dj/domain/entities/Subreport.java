@@ -106,7 +106,8 @@ public class Subreport extends DJBaseElement {
 
 	/**
 	 * Tells if the parameters maps origin is a parameter of the parent report, or a value of the current row (field)<br>
-	 * It's value must be SUBREPORT_PARAMETER_MAP_ORIGIN_PARAMETER or SUBREPORT_PARAMETER_MAP_ORIGIN_FIELD
+	 * It's value must be SUBREPORT_PARAMETER_MAP_ORIGIN_PARAMETER, SUBREPORT_PARAMETER_MAP_ORIGIN_FIELD, or
+	 * SUBREPORT_PARAMETER_MAP_ORIGIN_CUSTOM.
 	 */
 	private int parametersMapOrigin = DJConstants.SUBREPORT_PARAMETER_MAP_ORIGIN_PARAMETER;
 

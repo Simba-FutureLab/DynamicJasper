@@ -89,6 +89,11 @@ public class ExpressionUtils {
             return exp;
         }
 
+        if (sr.getParametersMapOrigin() == DJConstants.SUBREPORT_PARAMETER_MAP_ORIGIN_CUSTOM) {
+            exp.setText(sr.getParametersExpression());
+            return exp;
+        }
+
         return null;
     }
 
