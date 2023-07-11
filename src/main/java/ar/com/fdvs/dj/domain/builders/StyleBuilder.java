@@ -30,21 +30,14 @@
 package ar.com.fdvs.dj.domain.builders;
 
 import ar.com.fdvs.dj.domain.Style;
-import ar.com.fdvs.dj.domain.constants.Border;
 import ar.com.fdvs.dj.domain.constants.Font;
-import ar.com.fdvs.dj.domain.constants.HorizontalAlign;
-import ar.com.fdvs.dj.domain.constants.HorizontalImageAlign;
-import ar.com.fdvs.dj.domain.constants.HorizontalTextAlign;
-import ar.com.fdvs.dj.domain.constants.Rotation;
-import ar.com.fdvs.dj.domain.constants.Stretching;
 import ar.com.fdvs.dj.domain.constants.Transparency;
-import ar.com.fdvs.dj.domain.constants.VerticalAlign;
-import ar.com.fdvs.dj.domain.constants.VerticalImageAlign;
-import ar.com.fdvs.dj.domain.constants.VerticalTextAlign;
+import ar.com.fdvs.dj.domain.constants.*;
 import net.sf.jasperreports.engine.type.StretchTypeEnum;
 import net.sf.jasperreports.engine.type.TextAdjustEnum;
 
-import java.awt.Color;
+import java.awt.*;
+import java.util.function.Function;
 
 public class StyleBuilder {
 
@@ -81,6 +74,14 @@ public class StyleBuilder {
 
 		style.setName(name);
 		style.setParentStyleName(parentName);
+	}
+
+	public StyleBuilder(Style from) {
+		this(from, Function.identity());
+	}
+
+	public <T, R extends Style> StyleBuilder(T from, Function<T, R> converter) {
+		style = converter.apply(from);
 	}
 
 	public Style build(){
@@ -273,5 +274,4 @@ public class StyleBuilder {
 		style.SetTextAdjust(textAdjust);
 		return this;
 	}
-
 }
