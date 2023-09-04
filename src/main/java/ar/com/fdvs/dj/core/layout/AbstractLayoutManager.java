@@ -30,78 +30,32 @@
 package ar.com.fdvs.dj.core.layout;
 
 import ar.com.fdvs.dj.core.DJException;
-import ar.com.fdvs.dj.domain.DJChart;
-import ar.com.fdvs.dj.domain.DJChartOptions;
-import ar.com.fdvs.dj.domain.DJCrosstab;
-import ar.com.fdvs.dj.domain.DJWaterMark;
-import ar.com.fdvs.dj.domain.DynamicJasperDesign;
-import ar.com.fdvs.dj.domain.DynamicReport;
-import ar.com.fdvs.dj.domain.Style;
+import ar.com.fdvs.dj.domain.*;
 import ar.com.fdvs.dj.domain.builders.DataSetFactory;
 import ar.com.fdvs.dj.domain.constants.Border;
 import ar.com.fdvs.dj.domain.constants.Transparency;
 import ar.com.fdvs.dj.domain.entities.DJColSpan;
 import ar.com.fdvs.dj.domain.entities.DJGroup;
-import ar.com.fdvs.dj.domain.entities.columns.AbstractColumn;
-import ar.com.fdvs.dj.domain.entities.columns.BarCodeColumn;
-import ar.com.fdvs.dj.domain.entities.columns.ExpressionColumn;
-import ar.com.fdvs.dj.domain.entities.columns.ImageColumn;
-import ar.com.fdvs.dj.domain.entities.columns.PercentageColumn;
-import ar.com.fdvs.dj.domain.entities.columns.PropertyColumn;
+import ar.com.fdvs.dj.domain.entities.columns.*;
 import ar.com.fdvs.dj.domain.entities.conditionalStyle.ConditionalStyle;
-import ar.com.fdvs.dj.util.ExpressionUtils;
-import ar.com.fdvs.dj.util.HyperLinkUtil;
-import ar.com.fdvs.dj.util.LayoutUtils;
-import ar.com.fdvs.dj.util.Utils;
-import ar.com.fdvs.dj.util.WaterMarkRenderer;
+import ar.com.fdvs.dj.util.*;
 import net.sf.jasperreports.charts.design.JRDesignBarPlot;
 import net.sf.jasperreports.crosstabs.design.JRDesignCrosstab;
-import net.sf.jasperreports.engine.JRBand;
-import net.sf.jasperreports.engine.JRException;
-import net.sf.jasperreports.engine.JRGroup;
-import net.sf.jasperreports.engine.JRStyle;
-import net.sf.jasperreports.engine.JRTextElement;
+import net.sf.jasperreports.engine.*;
 import net.sf.jasperreports.engine.base.JRBaseChartPlot;
-import net.sf.jasperreports.engine.design.JRDesignBand;
-import net.sf.jasperreports.engine.design.JRDesignChart;
-import net.sf.jasperreports.engine.design.JRDesignChartDataset;
-import net.sf.jasperreports.engine.design.JRDesignConditionalStyle;
-import net.sf.jasperreports.engine.design.JRDesignElement;
-import net.sf.jasperreports.engine.design.JRDesignExpression;
-import net.sf.jasperreports.engine.design.JRDesignGraphicElement;
-import net.sf.jasperreports.engine.design.JRDesignGroup;
-import net.sf.jasperreports.engine.design.JRDesignImage;
-import net.sf.jasperreports.engine.design.JRDesignRectangle;
-import net.sf.jasperreports.engine.design.JRDesignSection;
-import net.sf.jasperreports.engine.design.JRDesignStyle;
-import net.sf.jasperreports.engine.design.JRDesignTextElement;
-import net.sf.jasperreports.engine.design.JRDesignTextField;
-import net.sf.jasperreports.engine.design.JRDesignVariable;
-import net.sf.jasperreports.engine.design.JasperDesign;
-import net.sf.jasperreports.engine.type.CalculationEnum;
-import net.sf.jasperreports.engine.type.EvaluationTimeEnum;
-import net.sf.jasperreports.engine.type.ModeEnum;
-import net.sf.jasperreports.engine.type.OnErrorTypeEnum;
-import net.sf.jasperreports.engine.type.PositionTypeEnum;
-import net.sf.jasperreports.engine.type.ResetTypeEnum;
-import net.sf.jasperreports.engine.type.ScaleImageEnum;
-import net.sf.jasperreports.engine.type.StretchTypeEnum;
+import net.sf.jasperreports.engine.design.*;
+import net.sf.jasperreports.engine.type.*;
 import net.sf.jasperreports.engine.util.JRExpressionUtil;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+
 import javax.imageio.ImageIO;
-import java.awt.Color;
-import java.awt.Image;
+import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
@@ -398,83 +352,31 @@ public abstract class AbstractLayoutManager implements LayoutManager {
         detail.setHeight(report.getOptions().getDetailHeight());
 
         for (AbstractColumn column : getVisibleColumns()) {
-
+            final JRDesignElement customElement;
+            /*
+              Custom handling
+             */
+            if ((customElement = handleCustomColumnType(column)) != null) {
+                detail.addElement(customElement);
+            }
             /*
               Barcode column
              */
-            if (column instanceof BarCodeColumn) {
-                BarCodeColumn barcodeColumn = (BarCodeColumn) column;
-                JRDesignImage image = new JRDesignImage(new JRDesignStyle().getDefaultStyleProvider());
-                JRDesignExpression imageExp = new JRDesignExpression();
-//				imageExp.setText("ar.com.fdvs.dj.core.BarcodeHelper.getBarcodeImage("+barcodeColumn.getBarcodeType() + ", "+ column.getTextForExpression()+ ", "+ barcodeColumn.isShowText() + ", " + barcodeColumn.isCheckSum() + ", " + barcodeColumn.getApplicationIdentifier() + ","+ column.getWidth() +", "+ report.getOptions().getDetailHeight().intValue() + " )" );
-
-                //Do not pass column height and width mecause barbecue
-                //generates the image with wierd dimensions. Pass 0 in both cases
-                String applicationIdentifier = barcodeColumn.getApplicationIdentifier();
-                if (applicationIdentifier != null && !"".equals(applicationIdentifier.trim())) {
-                    applicationIdentifier = "$F{" + applicationIdentifier + "}";
-                } else {
-                    applicationIdentifier = "\"\"";
-                }
-                imageExp.setText("ar.com.fdvs.dj.core.BarcodeHelper.getBarcodeImage(" + barcodeColumn.getBarcodeType() + ", " + column.getTextForExpression() + ", " + barcodeColumn.isShowText() + ", " + barcodeColumn.isCheckSum() + ", " + applicationIdentifier + ",0,0 )");
-
-
-                imageExp.setValueClass(Image.class);
-                image.setExpression(imageExp);
-                image.setHeight(getReport().getOptions().getDetailHeight());
-                image.setWidth(column.getWidth());
-                image.setX(column.getPosX());
-                image.setScaleImage(ScaleImageEnum.getByValue(barcodeColumn.getScaleMode().getValue()));
-
-                image.setOnErrorType(OnErrorTypeEnum.ICON); //FIXME should we provide control of this to the user?
-
-                if (column.getLink() != null) {
-                    String name = "column_" + getReport().getColumns().indexOf(column);
-                    HyperLinkUtil.applyHyperLinkToElement((DynamicJasperDesign) getDesign(), column.getLink(), image, name);
-                }
-
-                applyStyleToElement(column.getStyle(), image);
-
-                detail.addElement(image);
+            else if (column instanceof BarCodeColumn) {
+                detail.addElement(renderBarcodeColumn((BarCodeColumn) column));
             }
             /*
               Image columns
              */
             else if (column instanceof ImageColumn) {
-                ImageColumn imageColumn = (ImageColumn) column;
-                JRDesignImage image = new JRDesignImage(new JRDesignStyle().getDefaultStyleProvider());
-                JRDesignExpression imageExp = new JRDesignExpression();
-                imageExp.setText(column.getTextForExpression());
-
-                imageExp.setValueClassName(imageColumn.getValueClassNameForExpression());
-                image.setExpression(imageExp);
-                image.setHeight(getReport().getOptions().getDetailHeight());
-                image.setWidth(column.getWidth());
-                image.setX(column.getPosX());
-                image.setScaleImage(ScaleImageEnum.getByValue(imageColumn.getScaleMode().getValue()));
-
-                applyStyleToElement(column.getStyle(), image);
-
-                if (column.getLink() != null) {
-                    String name = "column_" + getReport().getColumns().indexOf(column);
-                    HyperLinkUtil.applyHyperLinkToElement((DynamicJasperDesign) getDesign(), column.getLink(), image, name);
-                }
-
-                detail.addElement(image);
+                detail.addElement(renderImageColumn((ImageColumn) column));
             }
             /*
               Regular Column
              */
             else {
                 if (getReport().getOptions().isShowDetailBand()) {
-                    JRDesignTextField textField = generateTextFieldFromColumn(column, getReport().getOptions().getDetailHeight(), null);
-
-                    if (column.getLink() != null) {
-                        String name = getDesign().getName() + "_column_" + getReport().getColumns().indexOf(column);
-                        HyperLinkUtil.applyHyperLinkToElement((DynamicJasperDesign) getDesign(), column.getLink(), textField, name);
-                    }
-
-                    transformDetailBandTextField(column, textField);
+                    final JRDesignTextField textField = generateTextFieldForDetail(column);
 
                     if (textField.getExpression() != null)
                         detail.addElement(textField);
@@ -483,6 +385,79 @@ public abstract class AbstractLayoutManager implements LayoutManager {
             }
 
         }
+    }
+
+    protected JRDesignTextField generateTextFieldForDetail(AbstractColumn column) {
+        JRDesignTextField textField = generateTextFieldFromColumn(column, getReport().getOptions().getDetailHeight(), null);
+
+        if (column.getLink() != null) {
+            String name = getDesign().getName() + "_column_" + getReport().getColumns().indexOf(column);
+            HyperLinkUtil.applyHyperLinkToElement((DynamicJasperDesign) getDesign(), column.getLink(), textField, name);
+        }
+
+        transformDetailBandTextField(column, textField);
+        return textField;
+    }
+
+    protected JRDesignElement renderImageColumn(ImageColumn column) {
+        JRDesignImage image = new JRDesignImage(new JRDesignStyle().getDefaultStyleProvider());
+        JRDesignExpression imageExp = new JRDesignExpression();
+        imageExp.setText(column.getTextForExpression());
+
+        imageExp.setValueClassName(column.getValueClassNameForExpression());
+        image.setExpression(imageExp);
+        image.setHeight(getReport().getOptions().getDetailHeight());
+        image.setWidth(column.getWidth());
+        image.setX(column.getPosX());
+        image.setScaleImage(ScaleImageEnum.getByValue(column.getScaleMode().getValue()));
+
+        applyStyleToElement(column.getStyle(), image);
+
+        if (column.getLink() != null) {
+            String name = "column_" + getReport().getColumns().indexOf(column);
+            HyperLinkUtil.applyHyperLinkToElement((DynamicJasperDesign) getDesign(), column.getLink(), image, name);
+        }
+
+        return image;
+    }
+
+    protected JRDesignElement renderBarcodeColumn(BarCodeColumn column) {
+        JRDesignImage image = new JRDesignImage(new JRDesignStyle().getDefaultStyleProvider());
+        JRDesignExpression imageExp = new JRDesignExpression();
+//				imageExp.setText("ar.com.fdvs.dj.core.BarcodeHelper.getBarcodeImage("+barcodeColumn.getBarcodeType() + ", "+ column.getTextForExpression()+ ", "+ barcodeColumn.isShowText() + ", " + barcodeColumn.isCheckSum() + ", " + barcodeColumn.getApplicationIdentifier() + ","+ column.getWidth() +", "+ report.getOptions().getDetailHeight().intValue() + " )" );
+
+        //Do not pass column height and width mecause barbecue
+        //generates the image with wierd dimensions. Pass 0 in both cases
+        String applicationIdentifier = column.getApplicationIdentifier();
+        if (applicationIdentifier != null && !"".equals(applicationIdentifier.trim())) {
+            applicationIdentifier = "$F{" + applicationIdentifier + "}";
+        } else {
+            applicationIdentifier = "\"\"";
+        }
+        imageExp.setText("ar.com.fdvs.dj.core.BarcodeHelper.getBarcodeImage(" + column.getBarcodeType() + ", " + column.getTextForExpression() + ", " + column.isShowText() + ", " + column.isCheckSum() + ", " + applicationIdentifier + ",0,0 )");
+
+
+        imageExp.setValueClass(Image.class);
+        image.setExpression(imageExp);
+        image.setHeight(getReport().getOptions().getDetailHeight());
+        image.setWidth(column.getWidth());
+        image.setX(column.getPosX());
+        image.setScaleImage(ScaleImageEnum.getByValue(column.getScaleMode().getValue()));
+
+        image.setOnErrorType(OnErrorTypeEnum.ICON); //FIXME should we provide control of this to the user?
+
+        if (column.getLink() != null) {
+            String name = "column_" + getReport().getColumns().indexOf(column);
+            HyperLinkUtil.applyHyperLinkToElement((DynamicJasperDesign) getDesign(), column.getLink(), image, name);
+        }
+
+        applyStyleToElement(column.getStyle(), image);
+
+        return image;
+    }
+
+    protected JRDesignElement handleCustomColumnType(AbstractColumn column) {
+        return null;
     }
 
 
